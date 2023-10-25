@@ -1,24 +1,50 @@
-import logo from './logo.svg';
-import './App.css';
+import React, { lazy, Suspense, useState, useEffect } from 'react';
+import { BrowserRouter, Link } from 'react-router-dom'; 
+import tabs from './tabs.json';
+
+const LoadPage = (file) => lazy(() => import(`./${file}`));
 
 function App() {
+  const [loadingPage, setLoadingPage] = useState(null);
+
+  useEffect(() => {
+    const location =  window.location.pathname
+    let tabToOpen;  
+    if (location !== '/') {
+      tabToOpen = tabs.find((tab) => tab.id === location.replace('/',''));
+    } else {
+      tabToOpen = tabs[0];
+    }
+  
+    if (tabToOpen) {
+      handleLoad(tabToOpen.path);
+    }
+  }, []);
+
+
+
+  const handleLoad = async (path) => {
+    const LoadContentPage = await LoadPage(path);
+    setLoadingPage(<LoadContentPage />);
+  };
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <BrowserRouter> 
+      <nav>
+        <ul>
+          {tabs.map((tab) => (
+            <li key={tab.id}>
+              <Link to={`/${tab.id}`} onClick={() => handleLoad(tab.path)}>
+                {tab.title}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </nav>
+      <Suspense fallback={<div>Loading...</div>}>
+        {loadingPage}
+      </Suspense>
+    </BrowserRouter>
   );
 }
 
